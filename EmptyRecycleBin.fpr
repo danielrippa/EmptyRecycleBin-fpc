@@ -1,0 +1,52 @@
+program EmptyRecycleBin;
+
+  {$mode delphi}
+
+  uses
+    Windows, SysUtils;
+
+  function SHEmptyRecycleBinA(hWnd: HWND; wFlags: DWORD; pszRootPath: PChar): BOOL; stdcall; external 'shell32.dll';
+
+  const
+    SHERB_NOCONFIRMATION = $00000001; // No empty confirmation
+    SHERB_NOPROGRESSUI = $00000002; // No progress tracking
+    SHERB_NOSOUND = $00000004; // No sound on completion
+
+var
+  Force, NoUI, NoSound: Boolean;
+  I: Integer;
+  dwFlags: DWORD;
+  Param: String;
+begin
+
+  dwFlags := 0;
+
+  for I := 1 to ParamCount do begin
+    Param := LowerCase(ParamStr(I));
+
+    if Pos('/force', Param) > 0 then
+        dwFlags := dwFlags + SHERB_NOCONFIRMATION;
+    if Pos('/noui', Param) > 0 then
+        dwFlags := dwFlags + SHERB_NOPROGRESSUI;
+    if Pos('/nosound', Param) > 0 then
+        dwFlags := dwFlags + SHERB_NOSOUND;
+
+  end;
+
+  try
+
+    if not SHEmptyRecycleBinA(0, dwFlags, Nil) then begin
+      ExitCode := 1;
+      WriteLn(StdErr, 'Unable to emtpy the Recycle Bin.');
+    end;
+
+  except
+
+    on E: Exception do begin
+      ExitCode := 3;
+      WriteLn(StdErr, E.Message);
+    end;
+
+  end;
+
+end.
